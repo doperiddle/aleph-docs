@@ -5,3 +5,5 @@ aioipfs = "~=0.6.2"
 [dev-packages]
 mypy = "*"
 black = "*"
+pytest = "*"
+pytest-asyncio = "*"
