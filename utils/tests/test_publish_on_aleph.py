@@ -223,4 +223,4 @@ class TestMain:
             main()
 
         assert len(captured_multiaddr) == 1
-        assert "aleph.im" in captured_multiaddr[0]
+        assert "aleph.im" in str(captured_multiaddr[0])

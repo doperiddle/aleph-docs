@@ -33,10 +33,11 @@ async def upload_site(files: list[Path], multiaddr: Multiaddr) -> CID:
     try:
         cid = None
         async for added_file in client.add(*files, recursive=True):
-            name = added_file.get("Name", "<unknown>")
+            name = str(added_file.get("Name", "<unknown>"))[:256].replace("\n", "\\n").replace("\r", "\\r")
             hash_value = added_file.get("Hash")
             if hash_value:
-                logger.debug("Uploaded file %s with CID: %s", name, hash_value)
+                safe_cid = str(hash_value)[:256].replace("\n", "\\n").replace("\r", "\\r")
+                logger.debug("Uploaded file %s with CID: %s", name, safe_cid)
                 cid = hash_value
         # The last CID is the CID of the directory uploaded
         if cid is None:
