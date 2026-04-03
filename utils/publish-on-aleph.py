@@ -20,22 +20,28 @@ Multiaddr = NewType("Multiaddr", str)
 CID = NewType("CID", str)
 
 
-def raise_no_cid():
-    raise ValueError("Could not obtain a CID")
-
-
 async def upload_site(files: list[Path], multiaddr: Multiaddr) -> CID:
+    if not files:
+        raise ValueError("No files provided for upload")
+
+    for f in files:
+        if not Path(f).exists():
+            raise FileNotFoundError(f"Path does not exist: {f}")
+
     client = aioipfs.AsyncIPFS(maddr=multiaddr)
 
     try:
         cid = None
         async for added_file in client.add(*files, recursive=True):
-            logger.debug(
-                f"Uploaded file {added_file['Name']} with CID: {added_file['Hash']}"
-            )
-            cid = added_file["Hash"]
+            name = added_file.get("Name", "<unknown>")
+            hash_value = added_file.get("Hash")
+            if hash_value:
+                logger.debug("Uploaded file %s with CID: %s", name, hash_value)
+                cid = hash_value
         # The last CID is the CID of the directory uploaded
-        return cid or raise_no_cid()
+        if cid is None:
+            raise ValueError("Could not obtain a CID: no files were added")
+        return CID(cid)
     finally:
         await client.close()
 
