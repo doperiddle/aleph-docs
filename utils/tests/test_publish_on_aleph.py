@@ -52,12 +52,16 @@ def _make_client(added_files=None, raise_on_add=None):
     client.close = AsyncMock()
 
     if raise_on_add is not None:
-        async def _raise(*args, **kwargs):
-            raise raise_on_add
-            # unreachable – satisfies the async-generator protocol
-            yield  # noqa: unreachable
+        exc = raise_on_add
 
-        client.add = _raise
+        class _RaisingAsyncIter:
+            def __aiter__(self):
+                return self
+
+            async def __anext__(self):
+                raise exc
+
+        client.add = MagicMock(return_value=_RaisingAsyncIter())
     else:
         files = added_files or []
         client.add = MagicMock(return_value=_async_iter(files))
@@ -70,12 +74,8 @@ def _make_client(added_files=None, raise_on_add=None):
 # ---------------------------------------------------------------------------
 
 class TestRaiseNoCid:
-    def test_always_raises_value_error(self):
+    def test_raises_value_error_with_message(self):
         with pytest.raises(ValueError, match="Could not obtain a CID"):
-            raise_no_cid()
-
-    def test_raises_value_error_type(self):
-        with pytest.raises(ValueError):
             raise_no_cid()
 
 
